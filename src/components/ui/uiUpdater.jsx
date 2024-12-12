@@ -1,231 +1,182 @@
 import React, { useState, useEffect } from 'react';
-import { validateProportions } from '../utils/validation.js';
+import { validateProportions } from '../utils/validation.jsx';
 
-const UIUpdater = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState([]);
-  const [results, setResults] = useState(null);
-  const [confidenceScore, setConfidenceScore] = useState(null);
-  const [confidenceLevel, setConfidenceLevel] = useState(null);
+export const createProportionRow = (label, value) => (
+    <div className="flex justify-between items-center mb-2 bg-white bg-opacity-50 rounded p-2">
+        <span className="font-medium">{label}</span>
+        <span className="font-bold">{value}</span>
+    </div>
+);
 
-  useEffect(() => {
-    // Handle loading state
-    if (isLoading) {
-      document.getElementById('loadingOverlay').style.display = 'flex';
-      document.getElementById('results').style.display = 'none';
-      document.getElementById('errorMessages').style.display = 'none';
-    } else {
-      document.getElementById('loadingOverlay').style.display = 'none';
-    }
-  }, [isLoading]);
+export const generateImprovementSuggestions = (measurements) => {
+    const suggestions = [];
+    if (!measurements.height) suggestions.push('Add height measurement');
+    if (!measurements.bust) suggestions.push('Add bust measurement');
+    if (!measurements.waist) suggestions.push('Add waist measurement');
+    if (measurements.bodyShape === 'average') suggestions.push('Specify a more precise body shape');
 
-  useEffect(() => {
-    // Handle errors
-    if (errors.length > 0) {
-      const errorElement = document.getElementById('errorMessages');
-      errorElement.innerHTML = errors.map((error) => (
-        <div key={error} className="flex items-center mb-1">
-          <svg
-            className="w-4 h-4 mr-2"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-          >
-            <path
-              fillRule="evenodd"
-              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-              clipRule="evenodd"
-            />
-          </svg>
-          <div>{error}</div>
+    return (
+        <div className="mt-4 bg-white bg-opacity-50 rounded-lg p-3">
+            <div className="font-semibold mb-2">To improve accuracy:</div>
+            <ul className="list-disc pl-5 space-y-1">
+                {suggestions.map((suggestion, index) => (
+                    <li key={index}>{suggestion}</li>
+                ))}
+            </ul>
         </div>
-      ));
-      errorElement.style.display = 'block';
-    } else {
-      errorElement.style.display = 'none';
-    }
-  }, [errors]);
-
-  useEffect(() => {
-    // Handle results
-    if (results) {
-      document.getElementById('results').style.display = 'block';
-
-      // Update primary measurements
-      updatePrimaryMeasurements(results.primaryResults);
-
-      // Update secondary measurements
-      updateSecondaryMeasurements(results.secondaryResults);
-
-      // Update confidence display
-      updateConfidenceDisplay(confidenceScore, confidenceLevel, results.measurements);
-
-      // Update size prediction
-      updateSizePrediction(results.primaryResults);
-
-      // Update proportions and warnings
-      updateProportionsAndWarnings(results.primaryResults, results.measurements);
-    }
-  }, [results, confidenceScore, confidenceLevel]);
-
-  // Helper functions
-  const updatePrimaryMeasurements = (results) => {
-    const measures = ['bust', 'waist', 'hips'];
-    measures.forEach((measure) => {
-      const element = document.getElementById(`result-${measure}`);
-      element.textContent = results[measure] ? `${results[measure].toFixed(1)}"` : '-';
-      animateValue(element, results[measure]);
-    });
-  };
-
-  const updateSecondaryMeasurements = (results) => {
-    const measures = ['shoulder', 'upperarm', 'thigh', 'inseam'];
-    measures.forEach((measure) => {
-      const element = document.getElementById(`result-${measure}`);
-      const value = measure === 'upperarm' ? results.upperArm : results[measure];
-      element.textContent = value ? `${value.toFixed(1)}"` : '-';
-      animateValue(element, value);
-    });
-  };
-
-  const updateConfidenceDisplay = (score, level, measurements) => {
-    const confidenceAlert = document.getElementById('confidence-alert');
-    confidenceAlert.className = `alert ${level.class} mb-4`;
-
-    let content = (
-      <div className="flex items-center justify-between mb-2">
-        <div>
-          <div className="font-bold text-lg">{level.text}</div>
-          <div className="text-sm mt-1">{level.description}</div>
-        </div>
-        <div className="text-3xl font-bold">{score}%</div>
-      </div>
     );
+};
 
-    content += (
-      <div className="confidence-bar">
-        <div
-          className="confidence-fill"
-          style={{ width: `${score}%`, backgroundColor: getConfidenceColor(score) }}
-        />
-      </div>
-    );
-
-    if (score < 90) {
-      content += generateImprovementSuggestions(measurements);
-    }
-
-    confidenceAlert.innerHTML = content;
-  };
-
-  const getConfidenceColor = (score) => {
+export const getConfidenceColor = (score) => {
     if (score >= 90) return '#10B981'; // Green
     if (score >= 75) return '#3B82F6'; // Blue
     if (score >= 60) return '#F59E0B'; // Yellow
     return '#EF4444'; // Red
-  };
+};
 
-  const generateImprovementSuggestions = (measurements) => {
-    let suggestions = (
-      <div className="mt-4 bg-white bg-opacity-50 rounded-lg p-3">
-        <div className="font-semibold mb-2">To improve accuracy:</div>
-        <ul className="list-disc pl-5 space-y-1">
-          {(!measurements.height && <li>Add height measurement</li>)}
-          {(!measurements.bust && <li>Add bust measurement</li>)}
-          {(!measurements.waist && <li>Add waist measurement</li>)}
-          {measurements.bodyShape === 'average' && (
-            <li>Specify a more precise body shape</li>
-          )}
-        </ul>
-      </div>
-    );
-    return suggestions;
-  };
+export const UIUpdater = ({
+    primaryResults = {}, // Default empty object if undefined
+    secondaryResults = {}, // Default empty object if undefined
+    confidenceScore,
+    confidenceLevel,
+    measurements = {}, // Default empty object if undefined
+    errors = [],
+}) => {
+    const [loading, setLoading] = useState(false);
 
-  const updateSizePrediction = (results) => {
-    const sizePrediction = document.getElementById('size-prediction');
-    sizePrediction.innerHTML = (
-      <div>
-        <div className="font-bold text-lg mb-2">Size Prediction</div>
-        <div className="text-2xl font-bold mb-2">{results.size || 'M'}</div>
-        <div className="text-sm">Based on your measurements and body proportions</div>
-      </div>
-    );
-  };
+    useEffect(() => {
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        if (loadingOverlay) {
+            loadingOverlay.style.display = loading ? 'flex' : 'none';
+        }
+    }, [loading]);
 
-  const updateProportionsAndWarnings = (results, measurements) => {
-    // Update proportions analysis
-    const proportions = document.getElementById('proportions');
-    let proportionText = (
-      <div className="font-bold text-lg mb-3">Proportion Analysis</div>
-    );
-
-    if (results.bust && results.waist) {
-      const bustToWaist = (results.bust / results.waist).toFixed(2);
-      proportionText += createProportionRow('Bust-to-Waist Ratio', bustToWaist);
-    }
-    if (results.hips && results.waist) {
-      const hipsToWaist = (results.hips / results.waist).toFixed(2);
-      proportionText += createProportionRow('Hips-to-Waist Ratio', hipsToWaist);
-    }
-    if (measurements.height && results.waist) {
-      const heightToWaist = (measurements.height / results.waist).toFixed(2);
-      proportionText += createProportionRow('Height-to-Waist Ratio', heightToWaist);
-    }
-
-    proportions.innerHTML = proportionText;
-
-    // Update warnings
-    const warnings = validateProportions({ ...measurements, ...results });
-    const warningsElement = document.getElementById('warnings');
-
-    if (warnings.length > 0) {
-      warningsElement.className = 'alert alert-warning mb-4';
-      warningsElement.innerHTML = (
-        <div>
-          <div className="font-bold text-lg mb-2">Proportion Warnings</div>
-          <ul className="list-disc pl-5 space-y-1">
-            {warnings.map((w) => (
-              <li key={w}>{w}</li>
+    const showErrors = () => (
+        <div id="errorMessages" className="block">
+            {errors.map((error, index) => (
+                <div key={index} className="flex items-center mb-1">
+                    <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                            clipRule="evenodd"
+                        />
+                    </svg>
+                    <div>{error}</div>
+                </div>
             ))}
-          </ul>
-          <div className="text-sm mt-2 italic">
-            These warnings can be measurement errors or unique body proportions.
-          </div>
         </div>
-      );
-      warningsElement.style.display = 'block';
-    } else {
-      warningsElement.style.display = 'none';
-    }
-
-  static createProportionRow(label, value) {
-    return (
-      <div className="flex justify-between items-center mb-2 bg-white bg-opacity-50 rounded p-2">
-        <span className="font-medium">{label}</span>
-        <span className="font-bold">{value}</span>
-      </div>
     );
-  }
 
-  static animateValue(element, value) {
-    if (!value) return;
-
-    const start = 0;
-    const duration = 1000;
-    const startTimestamp = performance.now();
-
-    const updateValue = (currentTimestamp) => {
-      const elapsed = currentTimestamp - startTimestamp;
-      const progress = Math.min(elapsed / duration, 1);
-
-      const currentValue = (progress * value).toFixed(1);
-      element.textContent = `${currentValue}"`;
-
-      if (progress < 1) {
-        requestAnimationFrame(updateValue);
-      }
+    const updatePrimaryMeasurements = () => {
+        const measures = ['bust', 'waist', 'hips'];
+        return (
+            <div id="primaryMeasurements">
+                {measures.map((measure) => (
+                    <div key={measure} id={`result-${measure}`} className="mb-2">
+                        {primaryResults[measure] ? `${primaryResults[measure].toFixed(1)}"` : '-'}
+                    </div>
+                ))}
+            </div>
+        );
     };
 
-    requestAnimationFrame(updateValue);
-  }
-}
+    const updateSecondaryMeasurements = () => {
+        const measures = ['shoulder', 'upperarm', 'thigh', 'inseam'];
+        return (
+            <div id="secondaryMeasurements">
+                {measures.map((measure) => (
+                    <div key={measure} id={`result-${measure}`} className="mb-2">
+                        {secondaryResults[measure] ? `${secondaryResults[measure].toFixed(1)}"` : '-'}
+                    </div>
+                ))}
+            </div>
+        );
+    };
+
+    const updateConfidenceDisplay = () => {
+        // Check if confidenceLevel is null or undefined
+        if (!confidenceLevel) {
+            return null; // Return null if confidenceLevel is not defined
+        }
+    
+        const confidenceBarStyle = {
+            width: `${confidenceScore}%`,
+            backgroundColor: getConfidenceColor(confidenceScore),
+        };
+    
+        return (
+            <div id="confidence-alert" className={`alert ${confidenceLevel.class} mb-4`}>
+                <div className="flex items-center justify-between mb-2">
+                    <div>
+                        <div className="font-bold text-lg">{confidenceLevel.text}</div>
+                        <div className="text-sm mt-1">{confidenceLevel.description}</div>
+                    </div>
+                    <div className="text-3xl font-bold">{confidenceScore}%</div>
+                </div>
+                <div className="confidence-bar">
+                    <div className="confidence-fill" style={confidenceBarStyle}></div>
+                </div>
+                {confidenceScore < 90 && generateImprovementSuggestions(measurements)}
+            </div>
+        );
+    };
+    
+
+    const updateSizePrediction = () => {
+        return (
+            <div id="size-prediction">
+                <div className="font-bold text-lg mb-2">Size Prediction</div>
+                <div className="text-2xl font-bold mb-2">
+                    {primaryResults.size || 'M'}
+                </div>
+                <div className="text-sm">Based on your measurements and body proportions</div>
+            </div>
+        );
+    };
+
+    const warnings = validateProportions({ ...measurements, ...primaryResults });
+    const proportionElements = [];
+
+    if (primaryResults.bust && primaryResults.waist) {
+        proportionElements.push(
+            createProportionRow('Bust-to-Waist Ratio', (primaryResults.bust / primaryResults.waist).toFixed(2))
+        );
+    }
+
+    if (primaryResults.hips && primaryResults.waist) {
+        proportionElements.push(
+            createProportionRow('Hips-to-Waist Ratio', (primaryResults.hips / primaryResults.waist).toFixed(2))
+        );
+    }
+
+    if (measurements.height && primaryResults.waist) {
+        proportionElements.push(
+            createProportionRow('Height-to-Waist Ratio', (measurements.height / primaryResults.waist).toFixed(2))
+        );
+    }
+
+    return (
+        <div>
+            {loading && <div id="loadingOverlay">Loading...</div>}
+            {errors.length > 0 && showErrors()}
+            {updatePrimaryMeasurements()}
+            {updateSecondaryMeasurements()}
+            {updateConfidenceDisplay()}
+            {updateSizePrediction()}
+            {warnings.length > 0 && (
+                <div id="warnings" className="alert alert-warning mb-4">
+                    <div className="font-bold text-lg mb-2">Proportion Warnings</div>
+                    <ul className="list-disc pl-5 space-y-1">
+                        {warnings.map((warning, index) => (
+                            <li key={index}>{warning}</li>
+                        ))}
+                    </ul>
+                    <div className="text-sm mt-2 italic">
+                        These warnings can be measurement errors or unique body proportions.
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};

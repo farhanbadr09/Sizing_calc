@@ -7,6 +7,8 @@ const Validation = ({ measurements }) => {
   const verticalProportionWarnings = validateVerticalProportions(measurements);
   const bodyShapeWarnings = validateBodyShape(measurements);
 
+  
+
   return (
     <div>
       {inputErrors.length > 0 && (
@@ -59,12 +61,12 @@ const Validation = ({ measurements }) => {
 export default Validation;
 
 // Helper function (no need for state)
-function isInRange(value, range) {
+export function isInRange(value, range) {
   return value >= range.min && value <= range.max;
 }
 
 // validateInputs function (no need for state)
-function validateInputs(measurements) {
+export function validateInputs(measurements) {
   const errors = [];
   const { height, waist, bust } = measurements;
 
@@ -89,7 +91,7 @@ function validateInputs(measurements) {
 }
 
 // validateProportions function (no need for state)
-function validateProportions(measurements) {
+export function validateProportions(measurements) {
   const warnings = [];
   const { height, bust, waist, hips } = measurements;
 
@@ -127,7 +129,7 @@ function validateProportions(measurements) {
 }
 
 // validateVerticalProportions function (no need for state)
-function validateVerticalProportions(measurements) {
+export function validateVerticalProportions(measurements) {
   const warnings = [];
   const { height } = measurements;
 
@@ -151,7 +153,7 @@ function validateVerticalProportions(measurements) {
 }
 
 // validateBodyShape function (no need for state)
-function validateBodyShape(measurements) {
+export function validateBodyShape(measurements) {
   const warnings = [];
   const { bust, waist, hips } = measurements;
 

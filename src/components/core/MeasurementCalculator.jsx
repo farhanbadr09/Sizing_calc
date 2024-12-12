@@ -1,12 +1,14 @@
+// MeasurementCalculator.jsx
 import React, { useState, useEffect } from 'react';
-import { BaseCalculator } from './BaseCalculator';
-import PrimaryCalculations from './PrimaryCalculations';
-import SecondaryCalculations from './SecondaryCalculations';
+import PrimaryCalculations from './PrimaryCalculations.jsx';
+import SecondaryCalculations from './SecondaryCalculations.jsx';
 
 const MeasurementCalculator = ({ measurements, bodyShape = 'average', additionalFactors = {} }) => {
   const [results, setResults] = useState(null);
 
-  // Validate and adjust results if any measurement is invalid
+  const primaryCalc = PrimaryCalculations;
+  const secondaryCalc = SecondaryCalculations;
+
   const validateAndAdjustResults = (results) => {
     Object.keys(results).forEach(key => {
       if (typeof results[key] !== 'number' || isNaN(results[key]) || results[key] < 0) {
@@ -16,27 +18,21 @@ const MeasurementCalculator = ({ measurements, bodyShape = 'average', additional
     });
   };
 
-  // Calculate measurements
-  const calculateMeasurements = () => {
-    // Calculate primary measurements
-    const primaryResults = PrimaryCalculations.calculateMeasurements(measurements, bodyShape, additionalFactors);
-    
-    // Calculate secondary measurements
-    const secondaryResults = SecondaryCalculations.calculateSecondaryMeasurements(measurements, bodyShape, additionalFactors);
-    
-    // Combine primary and secondary results
-    const combinedResults = {
-      primaryResults,
-      secondaryResults
-    };
-    
-    // Apply final adjustments and return
-    validateAndAdjustResults(combinedResults);
-    return combinedResults;
+  const calculateMeasurements = (measurements, bodyShape, additionalFactors) => {
+    const primaryResults = primaryCalc.calculateMeasurements(measurements, bodyShape, additionalFactors);
+    const secondaryResults = secondaryCalc.calculateSecondaryMeasurements(measurements, bodyShape, additionalFactors);
+
+    const combinedResults = { primaryResults, secondaryResults };
+    return applyFinalAdjustments(combinedResults);
+  };
+
+  const applyFinalAdjustments = (results) => {
+    validateAndAdjustResults(results);
+    return results;
   };
 
   useEffect(() => {
-    const calculatedResults = calculateMeasurements();
+    const calculatedResults = calculateMeasurements(measurements, bodyShape, additionalFactors);
     setResults(calculatedResults);
   }, [measurements, bodyShape, additionalFactors]);
 

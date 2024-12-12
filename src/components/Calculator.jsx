@@ -145,9 +145,34 @@ const SizeCalculator = () => {
                                             <div className="text-sm font-medium text-gray-600 mb-1">Waist</div>
                                             <div id="result-waist" className="text-xl font-bold text-gray-800">{results.waist || '-'}</div>
                                         </div>
+                                        <div className="result-box">
+                                            <div className="text-sm font-medium text-gray-600 mb-1">Hips</div>
+                                            <div id="result-waist" className="text-xl font-bold text-gray-800">{results.hips || '-'}</div>
+                                        </div>
                                     </div>
+ 
                                 </div>
-
+                                <div className="measurements-section">
+            <h3 className="section-title">Secondary Measurements</h3>
+            <div className="measurement-grid">
+                <div className="result-box">
+                    <div className="text-sm font-medium text-gray-600 mb-1">Shoulder Width</div>
+                    <div id="result-shoulder" className="text-xl font-bold text-gray-800">-</div>
+                </div>
+                <div className="result-box">
+                    <div className="text-sm font-medium text-gray-600 mb-1">Upper Arm</div>
+                    <div id="result-upperarm" className="text-xl font-bold text-gray-800">-</div>
+                </div>
+                <div className="result-box">
+                    <div className="text-sm font-medium text-gray-600 mb-1">Thigh</div>
+                    <div id="result-thigh" className="text-xl font-bold text-gray-800">-</div>
+                </div>
+                <div className="result-box">
+                    <div className="text-sm font-medium text-gray-600 mb-1">Inseam</div>
+                    <div id="result-inseam" className="text-xl font-bold text-gray-800">-</div>
+                </div>
+            </div>
+        </div>
                                 {/* Confidence Bar */}
                                 {confidenceScore && (
                                     <div id="confidence-alert" className="alert mb-4">

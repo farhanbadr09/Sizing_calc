@@ -171,3 +171,11 @@ button:active {
       grid-template-columns: 1fr;
   }
 }
+
+.validation-errors {
+  color: red;
+}
+
+.validation-warnings {
+  color: orange;
+}

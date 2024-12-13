@@ -1,106 +1,86 @@
-// eventHandlers.jsx
-import React, { useState } from 'react';
-import { validateInputs } from '../utils/validation.jsx';
-import MeasurementCalculator from '../core/MeasurementCalculator.jsx';
-import  confidenceCalculator  from '../core/ConfidenceCalculator.jsx';
-import { createProportionRow } from './uiUpdater'; // Adjust the path accordingly
-import { getConfidenceColor, generateImprovementSuggestions} from './uiUpdater.jsx';
+import { validateInputs } from '../utils/validation';  
+import MeasurementCalculator from '../core/MeasurementCalculator';  
+import confidenceCalculator from '../core/ConfidenceCalculator';  
+import { createProportionRow } from '../ui/uiUpdater';  
+import { getConfidenceColor, generateImprovementSuggestions } from '../ui/uiUpdater';  
 
-export const CalculationHandler = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState([]);
-  const [results, setResults] = useState(null);
-  const [confidenceScore, setConfidenceScore] = useState(null);
-  const [confidenceLevel, setConfidenceLevel] = useState(null);
+export const handleCalculation = async (
+  measurements,
+  setResults,
+  setConfidenceScore,
+  setConfidenceLevel,
+  setIsLoading,
+  setErrors
+) => {
+  console.log('handleCalculation started');
+  
+  // Reset states before calculation
+  setIsLoading(true);
+  setErrors([]);
+  setResults(null);
+  setConfidenceScore(null);
+  setConfidenceLevel(null);
 
-  const handleCalculation = () => {
-    setIsLoading(true);
-    setErrors([]);
-    setResults(null);
-    setConfidenceScore(null);
-    setConfidenceLevel(null);
+  // Validate the input measurements
+  const validationErrors = validateInputs(measurements);
+  if (validationErrors.length > 0) {
+    console.log('Validation Errors:', validationErrors);
+    setErrors(validationErrors);  // Set validation errors in the state
+    setIsLoading(false);  // Stop loading as validation failed
+    return;
+  }
 
-    const measurements = {
-      height: parseFloat(document.getElementById('height').value),
-      waist: parseFloat(document.getElementById('waist').value),
-      bust: parseFloat(document.getElementById('bust').value),
-      bodyShape: document.getElementById('bodyShape').value,
+  try {
+    // Instantiate the MeasurementCalculator class
+    const calculator = new MeasurementCalculator(measurements);
+
+    // Simulate async calculation (e.g., network request or complex calculation)
+    const additionalFactors = {
+      age: measurements.age,
+      bodyType: measurements.bodyType,
+      heightCategory: measurements.height
+        ? calculator.getHeightCategory(measurements.height)
+        : 'average',
     };
 
-    const validationErrors = validateInputs(measurements);
-
-    if (validationErrors.length > 0) {
-      setErrors(validationErrors);
-      setIsLoading(false);
-      return;
-    }
-
-    const calculator = new MeasurementCalculator();
-
-    setTimeout(() => {
-      const additionalFactors = {
-        age: document.getElementById('age').value,
-        bodyType: document.getElementById('bodyType').value,
-        heightCategory: measurements.height
-          ? calculator.getHeightCategory(measurements.height)
-          : 'average',
-      };
-
-      const calculatedResults = calculator.calculateMeasurements(
-        measurements,
-        measurements.bodyShape,
-        additionalFactors
-      );
-
-      const score = confidenceCalculator.calculateConfidence(
-        { ...measurements, ...calculatedResults },
-        additionalFactors
-      );
-
-      const level = confidenceCalculator.getConfidenceLevel(score);
-
-      setResults(calculatedResults);
-      setConfidenceScore(score);
-      setConfidenceLevel(level);
-      setIsLoading(false);
-    }, 1000);
-  };
-
-  const renderResults = () => {
-    if (!results) return null;
-
-    return (
-      <div className="results-container">
-        <div className="font-bold text-lg mb-3" style={{ color: getConfidenceColor(confidenceScore) }}>
-          Confidence Level: {confidenceLevel} ({confidenceScore}%)
-        </div>
-        {generateImprovementSuggestions(results)}
-        <div className="proportion-analysis">
-          <div className="font-bold text-lg mb-3">Proportion Analysis</div>
-          {results.bust && results.waist && createProportionRow('Bust-to-Waist Ratio', (results.bust / results.waist).toFixed(2))}
-          {results.hips && results.waist && createProportionRow('Hips-to-Waist Ratio', (results.hips / results.waist).toFixed(2))}
-          {results.height && results.waist && createProportionRow('Height-to-Waist Ratio', (results.height / results.waist).toFixed(2))}
-        </div>
-      </div>
+    const calculatedResults = await calculator.calculateMeasurements(
+      measurements,
+      measurements.bodyShape,
+      additionalFactors
     );
-  };
+    console.log('Calculated Results:', calculatedResults);
 
-  return (
-    <div className="calculation-handler">
-      <button className="calculate-button" onClick={handleCalculation}>
-        {isLoading ? 'Calculating...' : 'Calculate'}
-      </button>
-      {errors.length > 0 && (
-        <div className="error-container">
-          <div className="font-semibold text-red-500">Errors:</div>
-          <ul>
-            {errors.map((error, index) => (
-              <li key={index}>{error}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-      {renderResults()}
-    </div>
-  );
+    // Generate Proportion Rows for Display
+    const proportionRows = createProportionRow(calculatedResults.primaryResults);
+    console.log('Proportion Rows:', proportionRows);
+
+    // Calculate confidence score based on measurements and calculated results
+    const score = confidenceCalculator.calculateConfidence(
+      { ...measurements, ...calculatedResults },
+      additionalFactors
+    );
+    console.log('Confidence Score:', score);
+
+    // Determine the confidence level based on the score
+    const level = confidenceCalculator.getConfidenceLevel(score);
+    console.log('Confidence Level:', level);
+
+    // Get the confidence color for UI display
+    const confidenceColor = getConfidenceColor(score);
+    console.log('Confidence Color:', confidenceColor);
+
+    // Generate improvement suggestions based on the calculated results and confidence score
+    const improvementSuggestions = generateImprovementSuggestions(calculatedResults, score);
+    console.log('Improvement Suggestions:', improvementSuggestions);
+
+    // Set the state with the calculated results, confidence, and improvement suggestions
+    setResults({ ...calculatedResults, proportionRows, improvementSuggestions });
+    setConfidenceScore(score);
+    setConfidenceLevel(level);
+    setIsLoading(false);  // Stop loading as the calculation is complete
+  } catch (error) {
+    console.error('Error in calculation:', error);
+    setErrors(['An error occurred during the calculation.']);
+    setIsLoading(false); // Stop loading if there's an error
+  }
 };

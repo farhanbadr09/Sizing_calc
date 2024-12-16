@@ -5,7 +5,7 @@ import {
   validateVerticalProportions,
   validateBodyShape,
 } from "../components/utils/validation"; 
-import ConfidenceCalculator from "./core/ConfidenceCalculator";
+import { adjustmentFactors } from "./constants/adjustmentFactors";
 
 const SizeCalculator = () => {
   const [measurements, setMeasurements] = useState({
@@ -34,96 +34,117 @@ const SizeCalculator = () => {
     setMeasurements({ ...measurements, ageGroup: e.target.value });
   };
 
-  const handleCalculate = () => {
-    const inputErrors = validateInputs(measurements);
-    const proportionWarnings = validateProportions(measurements);
-    const verticalProportionWarnings =
-      validateVerticalProportions(measurements);
-    const bodyShapeWarnings = validateBodyShape(measurements);
+const handleCalculate = () => {
+  const inputErrors = validateInputs(measurements);
+  const proportionWarnings = validateProportions(measurements);
+  const verticalProportionWarnings =
+    validateVerticalProportions(measurements);
+  const bodyShapeWarnings = validateBodyShape(measurements);
 
-    if (
-      inputErrors.length > 0 ||
-      proportionWarnings.length > 0 ||
-      verticalProportionWarnings.length > 0 ||
-      bodyShapeWarnings.length > 0
-    ) {
-      setErrors(inputErrors);
-      setWarnings([
-        ...proportionWarnings,
-        ...verticalProportionWarnings,
-        ...bodyShapeWarnings,
-      ]);
-      setResults(null);
-      return; // Stop if there's any error or warning
-    }
-
-    // Destructure from measurements
-    const { height, weight, waist, bust, bodyShape } = measurements;
-
-    // Validate inputs
-    if (!height || !weight || !waist || !bust || !bodyShape) {
-      setErrors(["All input fields are required."]);
-      return;
-    }
-
-    // Perform calculations
-    const hips = Math.round((waist + bust) * 0.9);
-    const calculatedBmi = (weight / (height / 39.37) ** 2).toFixed(1); // BMI
-
-    const shoulderWidth = Math.round(waist * 0.8);
-    const upperArm = Math.round(bust * 0.16);
-    const thigh = Math.round(waist * 0.27);
-    const inseam = Math.round(height * 0.45);
-
-    // Confidence score and size prediction
-    const confidence = Math.round(Math.random() * 100);
-    const level = confidence > 75 ? "High" : "Low";
-    const size = confidence > 75 ? "L" : "XXL";
-
-    // Proportion analysis
-    const bustToWaistRatio = (bust / waist).toFixed(2);
-    const hipsToWaistRatio = (hips / waist).toFixed(2);
-    const heightToWaistRatio = (height / waist).toFixed(2);
-
-    // Warnings based on proportions
-    const warningsList = [];
-    if (bustToWaistRatio < 1.0 || bustToWaistRatio > 1.4) {
-      warningsList.push(
-        `Bust-to-waist ratio (${bustToWaistRatio}) is unusual. Expected between 1.0 and 1.4.`
-      );
-    }
-    if (hipsToWaistRatio < 1.1 || hipsToWaistRatio > 1.6) {
-      warningsList.push(
-        `Hips-to-waist ratio (${hipsToWaistRatio}) is unusual. Expected between 1.1 and 1.6.`
-      );
-    }
-    if (heightToWaistRatio < 5.0 || heightToWaistRatio > 7.0) {
-      warningsList.push(
-        `Height-to-waist ratio (${heightToWaistRatio}) is unusual. Expected between 5.0 and 7.0.`
-      );
-    }
-    // Update states with the results
-    setResults({
-      bust,
-      waist,
-      hips,
-      shoulderWidth,
-      upperArm,
-      thigh,
-      inseam,
-    });
-    setBmi(calculatedBmi);
-    setConfidenceScore(confidence);
-    setConfidenceLevel(level);
-    setSizePrediction(size);
-    setWarnings(warningsList);
-
-    setProportions([
-      { label: "Bust-to-Waist Ratio", value: bustToWaistRatio },
-      { label: "Hips-to-Waist Ratio", value: hipsToWaistRatio },
-      { label: "Height-to-Waist Ratio", value: heightToWaistRatio },
+  if (
+    inputErrors.length > 0 ||
+    proportionWarnings.length > 0 ||
+    verticalProportionWarnings.length > 0 ||
+    bodyShapeWarnings.length > 0
+  ) {
+    setErrors(inputErrors);
+    setWarnings([
+      ...proportionWarnings,
+      ...verticalProportionWarnings,
+      ...bodyShapeWarnings,
     ]);
-  };
+    setResults(null);
+    return; // Stop if there's any error or warning
+  }
+
+  // Destructure from measurements
+  const { height, weight, waist, bust, bodyShape } = measurements;
+
+  // Validate inputs
+  if (!height || !weight || !waist || !bust || !bodyShape) {
+    setErrors(["All input fields are required."]);
+    return;
+  }
+
+  // Perform calculations
+  let hips;
+
+  // Adjust hips calculation based on body shape
+  switch (bodyShape) {
+    case "hourglass":
+      hips = Math.round(waist * 1.2); // 20% larger than waist for hourglass shape
+      break;
+    case "pear":
+      hips = Math.round(waist * 1.3); // 30% larger than waist for pear shape
+      break;
+    case "rectangle":
+      hips = Math.round(waist); // Rectangle shape, hips roughly same as waist
+      break;
+    case "apple":
+      hips = Math.round(waist * 0.9); // 10% smaller than waist for apple shape
+      break;
+    default:
+      hips = Math.round(waist * 1.1); // Default ratio, assuming a generic body shape
+  }
+
+  const calculatedBmi = (weight / (height / 39.37) ** 2).toFixed(1); // BMI
+
+  const shoulderWidth = Math.round(waist * 0.8);
+  const upperArm = Math.round(bust * 0.16);
+  const thigh = Math.round(waist * 0.27);
+  const inseam = Math.round(height * 0.45);
+
+  // Confidence score and size prediction
+  const confidence = Math.round(Math.random() * 100);
+  const level = confidence > 75 ? "High" : "Low";
+  const size = confidence > 75 ? "L" : "XXL";
+
+  // Proportion analysis
+  const bustToWaistRatio = (bust / waist).toFixed(2);
+  const hipsToWaistRatio = (hips / waist).toFixed(2);
+  const heightToWaistRatio = (height / waist).toFixed(2);
+
+  // Warnings based on proportions
+  const warningsList = [];
+  if (bustToWaistRatio < 1.0 || bustToWaistRatio > 1.4) {
+    warningsList.push(
+      `Bust-to-waist ratio (${bustToWaistRatio}) is unusual. Expected between 1.0 and 1.4.`
+    );
+  }
+  if (hipsToWaistRatio < 1.1 || hipsToWaistRatio > 1.6) {
+    warningsList.push(
+      `Hips-to-waist ratio (${hipsToWaistRatio}) is unusual. Expected between 1.1 and 1.6.`
+    );
+  }
+  if (heightToWaistRatio < 5.0 || heightToWaistRatio > 7.0) {
+    warningsList.push(
+      `Height-to-waist ratio (${heightToWaistRatio}) is unusual. Expected between 5.0 and 7.0.`
+    );
+  }
+
+  // Update states with the results
+  setResults({
+    bust,
+    waist,
+    hips,
+    shoulderWidth,
+    upperArm,
+    thigh,
+    inseam,
+  });
+  setBmi(calculatedBmi);
+  setConfidenceScore(confidence);
+  setConfidenceLevel(level);
+  setSizePrediction(size);
+  setWarnings(warningsList);
+
+  setProportions([
+    { label: "Bust-to-Waist Ratio", value: bustToWaistRatio },
+    { label: "Hips-to-Waist Ratio", value: hipsToWaistRatio },
+    { label: "Height-to-Waist Ratio", value: heightToWaistRatio },
+  ]);
+};
+
 
   return (
     <div className="max-w-4xl mx-auto p-6">

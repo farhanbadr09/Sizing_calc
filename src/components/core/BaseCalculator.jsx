@@ -1,14 +1,19 @@
-
-import React, { useState } from 'react';
+// BaseCalculator.jsx
+import React, { Component } from 'react';
 import { validationRules } from '../constants/validationRules.js';
 import { standardSizes } from '../constants/standardSizes.js';
 import { bodyShapeData } from '../constants/bodyShapeData.js';
 import { adjustmentFactors } from '../constants/adjustmentFactors.js';
 
-const BaseCalculator = ({ initialMeasurements, bodyShape, additionalFactors }) => {
-  const [measurements, setMeasurements] = useState(initialMeasurements);
+class BaseCalculator extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      measurements: props.initialMeasurements, // Use initial measurements from props
+    };
+  }
 
-  const validateAndAdjustResults = (results, actualMeasurements, bodyShape) => {
+  validateAndAdjustResults = (results, actualMeasurements, bodyShape) => {
     const adjusted = { ...results };
     const ratios = validationRules.ratios.hipsToWaist[bodyShape] || validationRules.ratios.hipsToWaist.average;
 
@@ -37,7 +42,7 @@ const BaseCalculator = ({ initialMeasurements, bodyShape, additionalFactors }) =
     return adjusted;
   };
 
-  const applyAdjustments = (measurements, bodyShape, additionalFactors) => {
+  applyAdjustments = (measurements, bodyShape, additionalFactors) => {
     let adjusted = { ...measurements };
     const shapeData = bodyShapeData[bodyShape];
 
@@ -68,7 +73,7 @@ const BaseCalculator = ({ initialMeasurements, bodyShape, additionalFactors }) =
     return adjusted;
   };
 
-  const getStandardSize = (measurements) => {
+  getStandardSize = (measurements) => {
     const { bust, waist, hips } = measurements;
     let bestSize = 'M';
     let bestMatch = 0;
@@ -100,26 +105,31 @@ const BaseCalculator = ({ initialMeasurements, bodyShape, additionalFactors }) =
     return bestSize;
   };
 
-  const getHeightCategory = (height) => {
+  getHeightCategory = (height) => {
     if (!height) return 'average';
     if (height < 63) return 'short';
     if (height > 68) return 'tall';
     return 'average';
   };
 
-  // Using the functions
-  const adjustedResults = validateAndAdjustResults(measurements, initialMeasurements, bodyShape);
-  const finalAdjustments = applyAdjustments(adjustedResults, bodyShape, additionalFactors);
-  const standardSize = getStandardSize(finalAdjustments);
+  render() {
+    const { measurements } = this.state;
+    const { bodyShape, additionalFactors, initialMeasurements } = this.props;
 
-  return (
-    <div>
-      <h3>Adjusted Measurements</h3>
-      <pre>{JSON.stringify(finalAdjustments, null, 2)}</pre>
-      <h3>Standard Size: {standardSize}</h3>
-      <h3>Height Category: {getHeightCategory(measurements.height)}</h3>
-    </div>
-  );
-};
+    // Calculate results
+    const adjustedResults = this.validateAndAdjustResults(measurements, initialMeasurements, bodyShape);
+    const finalAdjustments = this.applyAdjustments(adjustedResults, bodyShape, additionalFactors);
+    const standardSize = this.getStandardSize(finalAdjustments);
+
+    return (
+      <div>
+        <h3>Adjusted Measurements</h3>
+        <pre>{JSON.stringify(finalAdjustments, null, 2)}</pre>
+        <h3>Standard Size: {standardSize}</h3>
+        <h3>Height Category: {this.getHeightCategory(measurements.height)}</h3>
+      </div>
+    );
+  }
+}
 
 export default BaseCalculator;

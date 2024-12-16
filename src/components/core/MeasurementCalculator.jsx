@@ -1,81 +1,131 @@
-import React, { useState, useEffect } from 'react';
-import { calculateMeasurements } from './PrimaryCalculations'; // Correctly import the named export
-import { calculateSecondaryMeasurements } from './SecondaryCalculations'; // Correctly import the named export
+import React, { useState } from 'react';
+import { BaseCalculator } from './BaseCalculator.jsx';
+import PrimaryCalculations from './PrimaryCalculations.jsx';
+import SecondaryCalculations from './SecondaryCalculations.jsx';
 
-// This is a functional component where hooks are correctly used
-const MeasurementCalculator = ({ measurements = {}, bodyShape = 'average', additionalFactors = {} }) => {
-  const [results, setResults] = useState(null);
+class MeasurementCalculator extends BaseCalculator {
+  constructor() {
+    super();
+    this.primaryCalc = PrimaryCalculations;
+    this.secondaryCalc = SecondaryCalculations;
+  }
 
-  // Function to validate and adjust results
-  const validateAndAdjustResults = (results) => {
-    console.log('Validating and adjusting results:', results);
-
-    // Validate results
-    Object.keys(results).forEach(key => {
+  // Validate and adjust the results, ensuring all values are numbers and >= 0
+  validateAndAdjustResults(results) {
+    Object.keys(results).forEach((key) => {
       if (typeof results[key] !== 'number' || isNaN(results[key]) || results[key] < 0) {
         console.warn(`Invalid value for ${key}. Adjusting to 0.`);
         results[key] = 0;
       }
     });
+  }
 
-    console.log('Adjusted results:', results);
-  };
+  // Main method to calculate measurements
+  calculateMeasurements(measurements, bodyShape = 'average', additionalFactors = {}) {
+    // Calculate primary measurements
+    const primaryResults = this.primaryCalc.calculateMeasurements(measurements, bodyShape, additionalFactors);
 
-  // Function to calculate measurements
-  const calculateMeasurements = (measurements, bodyShape, additionalFactors) => {
-    console.log('Starting primary and secondary calculations...');
+    // Calculate secondary measurements
+    const secondaryResults = this.secondaryCalc.calculateSecondaryMeasurements(measurements, bodyShape, additionalFactors);
 
-    // Get primary and secondary results
-    const primaryResults = calculateMeasurements(measurements, bodyShape, additionalFactors);
-    console.log('Primary calculation results:', primaryResults);
+    // Combine primary and secondary results
+    const combinedResults = {
+      primaryResults,
+      secondaryResults,
+    };
 
-    const secondaryResults = calculateSecondaryMeasurements(measurements, bodyShape, additionalFactors);
-    console.log('Secondary calculation results:', secondaryResults);
+    // Apply final adjustments to the combined results
+    return this.applyFinalAdjustments(combinedResults);
+  }
 
-    // Combine results
-    const combinedResults = { primaryResults, secondaryResults };
-    return applyFinalAdjustments(combinedResults);  // Apply adjustments
-  };
-
-  // Function to apply final adjustments to the results
-  const applyFinalAdjustments = (results) => {
-    console.log('Applying final adjustments to the combined results...');
-    validateAndAdjustResults(results.primaryResults);
-    validateAndAdjustResults(results.secondaryResults);
-
+  // Any final adjustments before returning results
+  applyFinalAdjustments(results) {
+    // Placeholder for any additional logic (e.g., rounding, applying thresholds, etc.)
     return results;
+  }
+}
+
+// React functional component for user interaction (UI)
+const MeasurementCalculatorComponent = () => {
+  const [measurements, setMeasurements] = useState({
+    height: '',
+    weight: '',
+    waist: '',
+    bust: '',
+  });
+  const [results, setResults] = useState(null);
+  const [bodyShape, setBodyShape] = useState('average');
+  const [additionalFactors, setAdditionalFactors] = useState({});
+
+  const handleCalculate = () => {
+    const calc = new MeasurementCalculator();
+
+    // Validate and calculate results
+    const calculatedResults = calc.calculateMeasurements(measurements, bodyShape, additionalFactors);
+    setResults(calculatedResults);
   };
 
-  // useEffect to calculate the measurements when `measurements` or `bodyShape` changes
-  useEffect(() => {
-    if (!measurements || Object.keys(measurements).length === 0) {
-      console.error("No valid measurements provided.");
-      return;
-    }
-
-    console.log('useEffect triggered, starting calculations...');
-    const calculatedResults = calculateMeasurements(measurements, bodyShape, additionalFactors);
-    console.log('Final calculated results:', calculatedResults);
-
-    setResults(calculatedResults);  // Set the results in the state
-  }, [measurements, bodyShape, additionalFactors]);  // Re-run calculations if dependencies change
-
-  // Return JSX with results or loading state
   return (
-    <div>
-      <h3>Measurement Calculation Results</h3>
-      {results ? (
-        <div>
-          <h4>Primary Results</h4>
-          <pre>{JSON.stringify(results.primaryResults, null, 2)}</pre>
-          <h4>Secondary Results</h4>
-          <pre>{JSON.stringify(results.secondaryResults, null, 2)}</pre>
+    <div className="calculator-container">
+      <h2>Measurement Calculator</h2>
+      <div className="input-form">
+        <label>
+          Height:
+          <input
+            type="number"
+            value={measurements.height}
+            onChange={(e) => setMeasurements({ ...measurements, height: e.target.value })}
+          />
+        </label>
+        <label>
+          Weight:
+          <input
+            type="number"
+            value={measurements.weight}
+            onChange={(e) => setMeasurements({ ...measurements, weight: e.target.value })}
+          />
+        </label>
+        <label>
+          Waist:
+          <input
+            type="number"
+            value={measurements.waist}
+            onChange={(e) => setMeasurements({ ...measurements, waist: e.target.value })}
+          />
+        </label>
+        <label>
+          Bust:
+          <input
+            type="number"
+            value={measurements.bust}
+            onChange={(e) => setMeasurements({ ...measurements, bust: e.target.value })}
+          />
+        </label>
+        <label>
+          Body Shape:
+          <select
+            value={bodyShape}
+            onChange={(e) => setBodyShape(e.target.value)}
+          >
+            <option value="average">Average</option>
+            <option value="hourglass">Hourglass</option>
+            <option value="pear">Pear</option>
+            <option value="apple">Apple</option>
+            <option value="invertedTriangle">Inverted Triangle</option>
+          </select>
+        </label>
+        <button onClick={handleCalculate}>Calculate</button>
+      </div>
+
+      {/* Display the results if available */}
+      {results && (
+        <div className="results">
+          <h3>Results</h3>
+          <pre>{JSON.stringify(results, null, 2)}</pre>
         </div>
-      ) : (
-        <p>Calculating...</p>
       )}
     </div>
   );
 };
 
-export default MeasurementCalculator;
+export default MeasurementCalculatorComponent;

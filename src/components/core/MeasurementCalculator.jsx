@@ -1,131 +1,80 @@
-import React, { useState } from 'react';
-import { BaseCalculator } from './BaseCalculator.jsx';
-import PrimaryCalculations from './PrimaryCalculations.jsx';
-import SecondaryCalculations from './SecondaryCalculations.jsx';
+import MeasurementCalculator from '../core/MeasurementCalculator';  // Correct import
 
-class MeasurementCalculator extends BaseCalculator {
-  constructor() {
-    super();
-    this.primaryCalc = PrimaryCalculations;
-    this.secondaryCalc = SecondaryCalculations;
+export const handleCalculate = async (
+  measurements,
+  setResults,
+  setConfidenceScore,
+  setConfidenceLevel,
+  setIsLoading,
+  setErrors
+) => {
+  console.log('handleCalculation started');
+  
+  // Reset states before calculation
+  setIsLoading(true);
+  setErrors([]);
+  setResults(null);
+  setConfidenceScore(null);
+  setConfidenceLevel(null);
+
+  // Validate the input measurements
+  const validationErrors = validateInputs(measurements);
+  if (validationErrors.length > 0) {
+    console.log('Validation Errors:', validationErrors);
+    setErrors(validationErrors);  // Set validation errors in the state
+    setIsLoading(false);  // Stop loading as validation failed
+    return;
   }
 
-  // Validate and adjust the results, ensuring all values are numbers and >= 0
-  validateAndAdjustResults(results) {
-    Object.keys(results).forEach((key) => {
-      if (typeof results[key] !== 'number' || isNaN(results[key]) || results[key] < 0) {
-        console.warn(`Invalid value for ${key}. Adjusting to 0.`);
-        results[key] = 0;
-      }
-    });
-  }
+  try {
+    // Instantiate the MeasurementCalculator class
+    const calculator = new MeasurementCalculator(measurements);
 
-  // Main method to calculate measurements
-  calculateMeasurements(measurements, bodyShape = 'average', additionalFactors = {}) {
-    // Calculate primary measurements
-    const primaryResults = this.primaryCalc.calculateMeasurements(measurements, bodyShape, additionalFactors);
-
-    // Calculate secondary measurements
-    const secondaryResults = this.secondaryCalc.calculateSecondaryMeasurements(measurements, bodyShape, additionalFactors);
-
-    // Combine primary and secondary results
-    const combinedResults = {
-      primaryResults,
-      secondaryResults,
+    // Calculate the results asynchronously
+    const additionalFactors = {
+      age: measurements.ageGroup,
+      bodyType: measurements.bodyShape,
+      heightCategory: measurements.height ? calculator.getHeightCategory(measurements.height) : 'average',
     };
 
-    // Apply final adjustments to the combined results
-    return this.applyFinalAdjustments(combinedResults);
+    const calculatedResults = await calculator.calculateMeasurements(
+      measurements,
+      measurements.bodyShape,
+      additionalFactors
+    );
+    console.log('Calculated Results:', calculatedResults);
+
+    // Generate Proportion Rows for Display
+    const proportionRows = createProportionRow(calculatedResults.primaryResults);
+    console.log('Proportion Rows:', proportionRows);
+
+    // Calculate confidence score based on measurements and calculated results
+    const score = confidenceCalculator.calculateConfidence(
+      { ...measurements, ...calculatedResults },
+      additionalFactors
+    );
+    console.log('Confidence Score:', score);
+
+    // Determine the confidence level based on the score
+    const level = confidenceCalculator.getConfidenceLevel(score);
+    console.log('Confidence Level:', level);
+
+    // Get the confidence color for UI display
+    const confidenceColor = getConfidenceColor(score);
+    console.log('Confidence Color:', confidenceColor);
+
+    // Generate improvement suggestions based on the calculated results and confidence score
+    const improvementSuggestions = generateImprovementSuggestions(calculatedResults, score);
+    console.log('Improvement Suggestions:', improvementSuggestions);
+
+    // Set the state with the calculated results, confidence, and improvement suggestions
+    setResults({ ...calculatedResults, proportionRows, improvementSuggestions });
+    setConfidenceScore(score);
+    setConfidenceLevel(level);
+    setIsLoading(false);  // Stop loading as the calculation is complete
+  } catch (error) {
+    console.error('Error in calculation:', error);
+    setErrors(['An error occurred during the calculation.']);
+    setIsLoading(false); // Stop loading if there's an error
   }
-
-  // Any final adjustments before returning results
-  applyFinalAdjustments(results) {
-    // Placeholder for any additional logic (e.g., rounding, applying thresholds, etc.)
-    return results;
-  }
-}
-
-// React functional component for user interaction (UI)
-const MeasurementCalculatorComponent = () => {
-  const [measurements, setMeasurements] = useState({
-    height: '',
-    weight: '',
-    waist: '',
-    bust: '',
-  });
-  const [results, setResults] = useState(null);
-  const [bodyShape, setBodyShape] = useState('average');
-  const [additionalFactors, setAdditionalFactors] = useState({});
-
-  const handleCalculate = () => {
-    const calc = new MeasurementCalculator();
-
-    // Validate and calculate results
-    const calculatedResults = calc.calculateMeasurements(measurements, bodyShape, additionalFactors);
-    setResults(calculatedResults);
-  };
-
-  return (
-    <div className="calculator-container">
-      <h2>Measurement Calculator</h2>
-      <div className="input-form">
-        <label>
-          Height:
-          <input
-            type="number"
-            value={measurements.height}
-            onChange={(e) => setMeasurements({ ...measurements, height: e.target.value })}
-          />
-        </label>
-        <label>
-          Weight:
-          <input
-            type="number"
-            value={measurements.weight}
-            onChange={(e) => setMeasurements({ ...measurements, weight: e.target.value })}
-          />
-        </label>
-        <label>
-          Waist:
-          <input
-            type="number"
-            value={measurements.waist}
-            onChange={(e) => setMeasurements({ ...measurements, waist: e.target.value })}
-          />
-        </label>
-        <label>
-          Bust:
-          <input
-            type="number"
-            value={measurements.bust}
-            onChange={(e) => setMeasurements({ ...measurements, bust: e.target.value })}
-          />
-        </label>
-        <label>
-          Body Shape:
-          <select
-            value={bodyShape}
-            onChange={(e) => setBodyShape(e.target.value)}
-          >
-            <option value="average">Average</option>
-            <option value="hourglass">Hourglass</option>
-            <option value="pear">Pear</option>
-            <option value="apple">Apple</option>
-            <option value="invertedTriangle">Inverted Triangle</option>
-          </select>
-        </label>
-        <button onClick={handleCalculate}>Calculate</button>
-      </div>
-
-      {/* Display the results if available */}
-      {results && (
-        <div className="results">
-          <h3>Results</h3>
-          <pre>{JSON.stringify(results, null, 2)}</pre>
-        </div>
-      )}
-    </div>
-  );
 };
-
-export default MeasurementCalculatorComponent;

@@ -1,10 +1,11 @@
-import { validateInputs } from '../utils/validation';  
-import MeasurementCalculator from '../core/MeasurementCalculator';  
-import confidenceCalculator from '../core/ConfidenceCalculator';  
-import { createProportionRow } from '../ui/uiUpdater';  
-import { getConfidenceColor, generateImprovementSuggestions } from '../ui/uiUpdater';  
+import { validateInputs } from '../utils/validation';
+import MeasurementCalculator from '../core/MeasurementCalculator';
+import confidenceCalculator from '../core/ConfidenceCalculator';
+import { createProportionRow } from '../ui/uiUpdater';
+import { getConfidenceColor, generateImprovementSuggestions } from '../ui/uiUpdater';
 
-export const handleCalculation = async (
+// Handle the calculate button click event
+export const handleCalculate = async (
   measurements,
   setResults,
   setConfidenceScore,
@@ -36,11 +37,9 @@ export const handleCalculation = async (
 
     // Simulate async calculation (e.g., network request or complex calculation)
     const additionalFactors = {
-      age: measurements.age,
-      bodyType: measurements.bodyType,
-      heightCategory: measurements.height
-        ? calculator.getHeightCategory(measurements.height)
-        : 'average',
+      age: measurements.ageGroup,
+      bodyType: measurements.bodyShape,
+      heightCategory: measurements.height ? calculator.getHeightCategory(measurements.height) : 'average',
     };
 
     const calculatedResults = await calculator.calculateMeasurements(

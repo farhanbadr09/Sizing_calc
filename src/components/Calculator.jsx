@@ -5,7 +5,6 @@ import {
   validateVerticalProportions,
   validateBodyShape,
 } from "../components/utils/validation"; 
-import { adjustmentFactors } from "./constants/adjustmentFactors";
 
 const SizeCalculator = () => {
   const [measurements, setMeasurements] = useState({
@@ -35,11 +34,19 @@ const SizeCalculator = () => {
   };
 
 const handleCalculate = () => {
-  const inputErrors = validateInputs(measurements);
-  const proportionWarnings = validateProportions(measurements);
-  const verticalProportionWarnings =
-    validateVerticalProportions(measurements);
-  const bodyShapeWarnings = validateBodyShape(measurements);
+  console.log("Button clicked - Starting calculation");
+
+    const inputErrors = validateInputs(measurements);
+    console.log("Input Errors:", inputErrors);
+
+    const proportionWarnings = validateProportions(measurements);
+    console.log("Proportion Warnings:", proportionWarnings);
+
+    const verticalProportionWarnings = validateVerticalProportions(measurements);
+    console.log("Vertical Proportion Warnings:", verticalProportionWarnings);
+
+    const bodyShapeWarnings = validateBodyShape(measurements);
+    console.log("Body Shape Warnings:", bodyShapeWarnings);
 
   if (
     inputErrors.length > 0 ||
